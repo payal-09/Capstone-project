@@ -1,0 +1,110 @@
+---
+title: "Data cleaning"
+author: "Payalben Siddharthsinh chavda"
+date: "June 9, 2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plyr)
+```
+
+## Data cleaning 
+
+## Read data file into R
+```{r}
+df <- read.csv("C:/Users/pchav/Downloads/MCI_2014_to_2019.csv")
+```
+## Drop irrelevant attributes
+```{r}
+crime_data <- df[,c(5,15:21,24:26)]
+```
+## Let’s check the structure of dataset:
+
+```{r}
+str(crime_data)
+print("All variables have correct data type. There are 5 categorical and 6 numerical attributes.")
+```
+
+
+## summary of dataset 
+```{r}
+summary(crime_data)
+print("summary shows that there is missing data in occurrenceyear, occurrencedayofyear, occurrenceday has missing values.
+")
+```
+
+## analyze categorical variables by frequency table
+```{r}
+count(crime_data, "occurrencemonth")
+count(crime_data,"occurrencedayofweek")
+count(crime_data,"MCI")
+count(crime_data,"Neighbourhood")
+count(crime_data,"premisetype")
+
+print("Frequency tabble shows that occurrencemonth and occurrencedayofweek has missing values.")
+```
+ 
+ 
+## check records with missing values
+```{r}
+missing_records <- crime_data[is.na(crime_data$occurrenceyear),]
+print("AS we look at those 59 records it contains 5 variable with missing values. So it’s better to remove those records as they won’t provide any useful information.")
+```
+
+
+## Dealing with missing values
+```{r}
+crime_data <- crime_data[!is.na(crime_data$occurrenceyear),]
+sum(is.na(crime_data))
+```
+
+## Outlier detection using boxplot:
+
+```{r}
+boxplot(crime_data$occurrenceyear)
+boxplot(crime_data$occurrenceday)
+boxplot(crime_data$occurrencehour)
+boxplot(crime_data$occurrencedayofyear)
+boxplot(crime_data$Long)
+boxplot(crime_data$Lat)
+print("This shows that only “occurrenceyear” has outliers.As project aim to analyse 2014-2019 data, we will remove records with of 2000 to 2013.")
+```
+
+
+##Removing records from year 2000 to 2013:
+
+```{r}
+crime_data <- crime_data[(crime_data$occurrenceyear > 2013),]
+```
+
+## Remove duplicates from dataset
+```{r}
+crime_data <- crime_data[!duplicated(crime_data), ]
+
+print("This is our consistence dataset.I will use this dataset for futher analysis.")
+```
+
+
+
+## Dimension of consistence dataset
+```{r}
+dim(crime_data)
+```
+
+## Imbalance data
+```{r}
+prop.table(table(crime_data$MCI))
+
+print("This shows data is imbalance, more than 50 percent of data belongs to Assault class.")
+```
+
