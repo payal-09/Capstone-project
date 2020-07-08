@@ -1,0 +1,225 @@
+---
+title: "EDA"
+author: "Payalben Siddharthsinh chavda"
+date: "July 6, 2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+This open source Toronto's crime dataset has crime records for year 2014-2019. There are 5 major crime types distributed over 140 neighbourhoods. Let's do the exploratory data analysis to get some useful insight from the dataset. 
+
+```{r}
+##Important libraries:
+library(dplyr)
+library(ggplot2)
+library(ggmap)    
+```
+
+##data preparation
+```{r}
+df <- read.csv("C:/Users/pchav/Downloads/MCI_2014_to_2019.csv")
+
+crime_data <- df[,c(5,15:21,24,25,26)]
+
+###data cleaning
+crime_data <- crime_data[!is.na(crime_data$occurrenceyear),]
+crime_data <- crime_data[(crime_data$occurrenceyear > 2013),]
+crime_data <- crime_data[!duplicated(crime_data), ]
+
+crime_data$premisetype = as.factor(crime_data$premisetype)
+crime_data$occurrencemonth = as.factor(crime_data$occurrencemonth)
+crime_data$occurrencedayofweek = as.factor(crime_data$occurrencedayofweek)
+crime_data$MCI = as.factor(crime_data$MCI)
+```
+
+##Distribution of major crime types in Toronto city.
+Distribution of major crimes show that "Assault" is most prevalent crime in Toronto city.
+```{r }
+df <- crime_data %>%
+  group_by(MCI) %>%
+  summarise(counts = n())
+
+ggplot(df, aes(x = reorder(MCI, counts), y = counts  )) +
+  geom_bar(fill = "#0073C2FF", stat = "identity", width = 0.5) +
+  coord_flip()+ 
+  geom_text(aes(label = counts), hjust = -0.1) + 
+             ggtitle("Distribution of major crimes in Toronto city") +
+  labs(x = "MCI(Major crimes)", y = "Number of occurrences")
+```
+
+## Total occurrence of crimes per year
+Crime Rates constantly increased from year 2014-2019.
+```{r }
+df <- crime_data %>%
+  group_by(occurrenceyear) %>%
+  summarise(counts = n())
+ggplot(df, aes(x = reorder(occurrenceyear, counts), y = counts  )) +
+  geom_bar(fill = "#000099", stat = "identity", width = 0.5) +
+  geom_text(aes(label = counts), vjust = -0.3) + 
+  ggtitle(" Total occurrence of crimes by year ") +
+  labs(x = "Year", y = "Total number of crimes ")
+
+
+```
+
+##Let's look at cime type distribution in year 2014-2019.
+Assault is most prevalent crime in every year followed by Break and Enter.
+```{r }
+df <- crime_data %>%
+  group_by(occurrenceyear, MCI) %>%
+  summarise(counts = n())
+
+ggplot(df, aes(x = reorder(occurrenceyear,counts), y = counts , fill = MCI )) +
+  geom_bar( stat = "identity", position ="dodge") +
+  ggtitle("Crime type distribution in city by every year") +
+  labs(x = "Year", y = "Total occurrences ") +
+  scale_fill_manual("MCI", values = c("Assault" = "blue", "Auto Theft" = "red", "Break and Enter" = "green","Robbery" = "dark orange", "Theft Over" = "black"))
+
+```
+
+##Crime type distribution in city by every month
+
+Assault has higer chance to occur in summer time whereas Break and Enter , Auto theft have higer chance to happen in between september and november month.However occurrences of Theft over reamin same throughout the year.
+```{r }
+df <- crime_data %>%
+  group_by(occurrencemonth,MCI) %>%
+  summarise(counts = n())
+
+df$occurrencemonth <- factor(df$occurrencemonth, levels=c("January", "February","March"
+                                                            ,"April","May", "June",
+                                                            "July", "August","September",
+                                                            "October", "November", "December"))
+
+ggplot(df, aes(x = occurrencemonth, y = counts, color = MCI, group = MCI  )) +
+   geom_line(size=1.5 ) +
+  ggtitle("Crime  distribution in city by every month") +
+  labs(x = "Months", y = "Total occurrences")+
+  scale_color_manual(values = c("Assault" = "red", "Auto Theft" = "blue", "Break and Enter" = "green","Robbery" = "dark orange", "Theft Over" = "black"))
+
+```
+##Crime type distribution in city for day of week
+
+Assualt has higher chance to happen in weekends. Break and Enter has higher chance to happen on friday. 
+```{r }
+df <- crime_data %>%
+  group_by(occurrencedayofweek,MCI) %>%
+  summarise(counts = n())
+
+df$occurrencedayofweek <- factor(df$occurrencedayofweek, levels=c( "Monday    ","Tuesday   ", "Wednesday ", "Thursday  ", "Friday    ", "Saturday  ", "Sunday    "))
+
+ggplot(df, aes(x = occurrencedayofweek, y = counts, color = MCI, group = MCI  )) +
+  geom_line(size=1.5 ) +
+  ggtitle("Crime type distribution in city by day of week") +
+  labs(x = "day of week", y = "Total occurrences")+
+ scale_color_manual(values = c("Assault" = "red", "Auto Theft" = "blue", "Break and Enter" = "green","Robbery" = "dark orange", "Theft Over" = "black"))
+
+```
+##Crime type distribution by hour of day
+```{r }
+df <- crime_data %>%
+  group_by(occurrencehour, MCI) %>%
+  summarise(counts = n())
+
+ggplot(df, aes(x=occurrencehour, y=counts, color=MCI, group=MCI)) +
+  geom_line(size=1.5 )+
+  ggtitle("Crime type distribution by hour of day") +
+  labs(x = "Hour(24-hour clock) ", y = "Number of occurrences ")+
+  scale_color_manual(values = c("Assault" = "red", "Auto Theft" = "blue", "Break and Enter" = "green","Robbery" = "dark orange", "Theft Over" = "black"))
+
+```
+##Observations
+While "Assaults"" are the most common crimes throughout the day.It is more likely to happen from the afternoon till nights and in the early mornings."Break and Enter" most likely to occur during early morning time and afternoon time. Whereas "Robbery" and "Auto Theft" happened more offen from the late eveing till the nights.
+
+
+##Toronto's neighbourhoods with most crime - Top 10
+```{r }
+df <- crime_data %>%
+  group_by(Neighbourhood) %>%
+  summarise(counts = n())
+top_10 <- top_n(df,10)
+
+ggplot(top_10, aes(x = reorder(Neighbourhood, counts), y = counts  )) +
+  geom_bar(fill = "#000099", stat = "identity", width = 0.5) +
+  coord_flip()+
+  geom_text(aes(label = counts), hjust = -0.3) + 
+  ggtitle("Toronto's neighbourhoods with most crime - Top 10") +
+  labs(y= "Number of occurrences", x = "Neighbourhoods")
+
+```
+## Observations
+These are the most dangerous neighbourhoods in Tornto city.
+
+##Mapping on Toronto map
+```{r }
+df <- data.frame(crime_data$MCI, crime_data$Lat, crime_data$Long )
+colnames(df) <- c('crimes', 'lat', 'lon')
+bbox <- make_bbox(lon = df$lon, lat = df$lat, f = 0.05)
+map <- get_map(location = bbox, maptype = "roadmap",color= "color",source = "google", scale = 2, zoom = 10 )
+ggmap(map) +
+  geom_point(data=df, aes(x = lon, y = lat, color = "red"), 
+             size = 0.5, alpha = 0.03) +
+  xlab('Longitude') +
+  ylab('Latitude') +
+  ggtitle('Location of MCI in Toronto')
+```
+##observation 
+
+Graph illustrate that large concentration of MCI is in the Waterfront area. However, this graph is not that helpful when comaring high-density area. So let's optimize our visualization with better density map for each MCI.
+
+## Geographic density map of MCI
+
+Following are the geographic density mapes of MCI and different map for each crime type to optimize our visualization for each crime type density distribution. 
+```{r }
+
+df <- data.frame(crime_data$MCI, crime_data$Lat, crime_data$Long )
+colnames(df) <- c('crimes', 'lat', 'lon')
+bbox <- make_bbox(lon = df$lon, lat = df$lat, f = 0.05)
+map <- get_map(location = bbox, maptype = "roadmap",color= "color",source = "google", scale = 2, zoom = 10 )
+ggmap(map) +
+  geom_density2d(data = df, aes(x = lon, y = lat), size = 0.4) + 
+  stat_density2d(data = df, aes(x = lon, y = lat, fill = ..level.., alpha = ..level..), color = FALSE,
+                 bins = 300, geom = 'polygon') +
+  scale_fill_gradientn(colors = c(rev(rainbow(100, start=0, end=.5)))) +
+  scale_alpha(range = c(0, 0.6), guide = FALSE) +
+  labs(title = 'Geographic density of MCI') +
+  theme(axis.line = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.title = element_blank(),
+        legend.position = 'bottom',
+        plot.title = element_text(size = 18, hjust = 0.5, face = 'bold')
+  )
+
+
+
+ggmap(map) +
+  geom_density2d(data = df, aes(x = lon, y = lat), size = 0.4) + 
+  stat_density2d(data = df,
+                 aes(x = lon, y = lat, fill = ..level.., alpha = ..level..), color = FALSE,
+                 bins = 300, geom = 'polygon') +
+  scale_fill_gradientn(colors = c(rev(rainbow(100, start=0, end=.5)))) +
+  scale_alpha(range = c(0, 0.6), guide = FALSE) +
+  theme(axis.line = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.title = element_blank(),
+        legend.position = 'bottom',
+        plot.title = element_text(size = 18, hjust = 0.5, face = 'bold')) +
+  labs(y = 'Latitude' , x = 'Longitude' )+
+  ggtitle('Geographic Density of Different Crimes') +
+  facet_wrap(~ crimes, nrow = 3)
+
+```
+
