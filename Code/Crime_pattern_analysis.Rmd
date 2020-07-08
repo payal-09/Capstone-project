@@ -1,0 +1,170 @@
+---
+title: "Crime Pattern Analysis"
+author: "Payalben Siddharthsinh chavda"
+date: "July 7, 2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Crime pattern analysis
+
+## Crime hotspot (high density area) analysis.
+
+K- Means algorithm has been used for spatial analysis. K-Means clustering applied on "MCI" and "Neighbourhood" variables, goal of this analysis is to assign a cluster to each neighbourhood. It partition neighbourhood belongs to the cluster with nearest mean. In addition, Elbow method analysis applied to decide the optimal value of k that is the number of cluster.
+
+## Important labraries
+```{r}
+library(tidyr)
+library(cluster)
+library(dplyr)
+```
+
+## Prepare data for unsupervised analysis:
+```{r}
+df <- read.csv("C:/Users/pchav/Downloads/MCI_2014_to_2019.csv")
+
+crime_data <- df[,c(5,15:21,24,25,26)]
+
+###data cleaning
+crime_data <- crime_data[!is.na(crime_data$occurrenceyear),]
+crime_data <- crime_data[(crime_data$occurrenceyear > 2013),]
+crime_data <- crime_data[!duplicated(crime_data), ]
+
+##factorized data
+crime_data$premisetype = as.factor(crime_data$premisetype)
+crime_data$occurrencemonth = as.factor(crime_data$occurrencemonth)
+crime_data$occurrencedayofweek = as.factor(crime_data$occurrencedayofweek)
+crime_data$MCI = as.factor(crime_data$MCI)
+
+df1 <- crime_data %>%
+  group_by(MCI, Neighbourhood) %>%
+  summarise(counts = n())
+groups <- spread(df1, key = MCI, value = counts)
+df2 <- groups[, -c(1,1)]
+Mean <- apply(df2, 2, mean)
+SD <- apply(df2, 2, sd)
+df2 <- scale(df2, Mean, SD)
+
+```
+
+##Deciding optimal number of clusters for k-mean clustering algorithm using Elbow method
+```{r}
+k_value <- (nrow(df2)-1) * sum(apply(df2, 2, var))
+for (i in 2:15) k_value[i] <- sum(kmeans(df2, centers=i)$withiness)
+plot(1:15, k_value, type='b', xlab='Number of clusters (K)', ylab='Sum of squared distances')
+
+```
+This Plot shows a very strong elbow ar k = 2. It's clear that for our analysis optimal number of cluster is 2.
+
+## Appling k-Means algorithm :
+```{r}
+clusters <- kmeans(df2,2)
+clusters
+
+```
+Results of this analysis indicates that the first cluster has 129 neighbourhoods with low mean for each MCI category. Whereas the second cluster has 10 neighbourhoods with high mean for each MCI category. Second cluster is the crime hotspot.
+
+## plotting clusters:
+
+```{r}
+cluster_plot <- data.frame(df2, clusters$cluster)
+clusplot(cluster_plot, clusters$cluster, color=TRUE, shade=F, main='k-Means Cluster Analysis')
+
+```
+Result of K-Means clustering is pretty good, this describe 87% of point variability.
+
+
+### Crime pattern analysis
+## Association RUles
+
+Association rules is rule-based data mining method for discovering relationship between variables.The objective of association rules is to discover strong rules in data-sets using measures of interestingness.
+
+Apriori algorith is classic algorith for generating association rule from dataset.
+
+## Important libraries 
+```{r}
+library("arules")
+library("arulesViz") 
+library('dplyr')
+```
+
+## Data preparation
+```{r}
+crime_data <- df[,c(15,16,19,20,21,24)]
+
+crime_data <- crime_data[!is.na(crime_data$occurrenceyear),]
+crime_data <- crime_data[(crime_data$occurrenceyear > 2013),]
+crime_data <- crime_data[!duplicated(crime_data), ]
+
+###modifying occurrencehour
+crime_data$occurrencehour[crime_data$occurrencehour >= 6 & crime_data$occurrencehour < 12] <- "Morning"
+crime_data$occurrencehour[crime_data$occurrencehour >= 12 & crime_data$occurrencehour < 18] <- "Afternoon"
+crime_data$occurrencehour[crime_data$occurrencehour >= 18 & crime_data$occurrencehour < 24] <- "Evening"
+crime_data$occurrencehour[ crime_data$occurrencehour < 6] <- "Night"
+
+### make all columns factors
+for(i in 1:ncol(crime_data)) crime_data[[i]] <- as.factor(crime_data[[i]])
+
+ 
+### Removing occurrenceyear and occurrencedayoyear
+crime_data <- crime_data[,-c(1,1)]
+
+```
+##converting dataframe into transection
+```{r}
+trans <- as(crime_data, "transactions")
+```
+## General rules
+```{r}
+rules <- apriori(data = trans, parameter=list (supp=0.03,conf = 0.5))
+length(rules)
+inspect(head(sort(rules,by='lift'),5))
+
+```
+first rule indicates that Assault and sunday has strong relationship with higest lift 1.1 . Second rule implies that Assault and afternoon has strong relation. We will considered all rule which has lift > 1.
+
+This is looks like all general rules are for "Assault" category. Let's generate rules for other categories.
+
+## Rules for Break and Enter
+```{r}
+BreakandEnter_rules <- apriori(data = trans, parameter=list (supp=0.01,conf = 0.3), appearance = list (rhs="MCI=Break and Enter"))
+length(BreakandEnter_rules)
+inspect((sort(BreakandEnter_rules ,by='lift')))
+
+```
+This rules indicate that there is high chance of break and enter in morning and night time. 
+## Rules for Auto Theft
+```{r}
+AutoTheft_rules <- apriori(data = trans, parameter=list (supp=0.01,conf = 0.3), appearance = list (rhs="MCI=Auto Theft"))
+inspect(head(AutoTheft_rules))
+length(AutoTheft_rules)
+```
+{Neighbourhood=West Humber-Clairville (1)}	=>	{MCI=Auto Theft}	
+This rule shows lift is  3.1 and it shows that West Humber-Clairville (1) neighbourhood has high occurrences of Auto theft. 
+
+## Rules for Robbery
+```{r}
+Robbery_rules <- apriori(data = trans, parameter=list (supp=0.02,conf = 0.1), appearance = list (rhs="MCI=Robbery"))
+inspect(head(Robbery_rules))
+length(Robbery_rules)
+
+```
+## Rules for TheftOver
+```{r}
+TheftOver_rules <- apriori(data = trans, parameter=list (supp=0.0001,conf = 0.1), appearance = list (rhs="MCI=Theft Over"))
+inspect(head(TheftOver_rules))
+length(TheftOver_rules)
+
+```
+Rules for robbery and theftover both has very low confidence and support, so both rules are not useful for analysis.
+
+In summary, most frequent rules are related to Assault crime category.
+
+If we combine this Association rules with exploratory data analysis , both results are pointing to similar important information.
