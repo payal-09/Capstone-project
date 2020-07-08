@@ -1,0 +1,180 @@
+---
+title: "Classification"
+author: "Payalben Siddharthsinh chavda"
+date: "July 7, 2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+## Important libraries
+```{r }
+library(dplyr)
+library(ggplot2)
+library(DMwR)
+
+```
+
+## Data preparation
+```{r }
+df <- read.csv("C:/Users/pchav/Downloads/MCI_2014_to_2019.csv")
+crime_data <- df[,c(5,15:21,23,25,26)] ## HoodId has been used  insted of Neighbourhood(In R, Random forest do not work with variable which has more than 53 categories and dataset has 140 neighbourhoods).
+
+###data cleaning
+crime_data <- crime_data[!is.na(crime_data$occurrenceyear),]
+crime_data <- crime_data[(crime_data$occurrenceyear > 2013),]
+crime_data <- crime_data[!duplicated(crime_data), ]
+
+##factorized data
+crime_data$premisetype = as.factor(crime_data$premisetype)
+crime_data$occurrencemonth = as.factor(crime_data$occurrencemonth)
+crime_data$occurrencedayofweek = as.factor(crime_data$occurrencedayofweek)
+crime_data$MCI = as.factor(crime_data$MCI)
+
+#encoding
+#label encoding has been done for month, day of week and MCI.
+crime_data$occurrencemonth = factor(crime_data$occurrencemonth,
+                                    levels = c("January","February","March"
+                                               ,"April","May", "June",
+                                               "July", "August","September",
+                                               "October", "November", "December"),
+                                    labels = c(1, 2, 3,4,5,6,7,8,9,10,11,12))
+
+crime_data$occurrencedayofweek = factor(crime_data$occurrencedayofweek,
+                                        levels = c("Friday    ", "Monday    ", "Saturday  ", "Sunday    ", "Thursday  ", "Tuesday   ", "Wednesday "),
+                                        labels = c(6,2,7,1,5,3,4))
+crime_data$MCI <- factor(crime_data$MCI,
+                         levels = c("Assault", "Auto Theft", "Break and Enter", "Robbery", "Theft Over"),
+                         labels = c(1,2,3,4,5))
+
+## Onehot encoding for premisetype.
+crime_data <- crime_data %>% mutate(value = 1)  %>% spread(premisetype, value,  fill = 0 ) 
+
+crime_data <- crime_data[, c(7,1:6,8:15)]
+
+##occurrenceyear is irrelevant for this prediction analysis. Dropping occurrenceyear attribute.
+clean_data <- crime_data[,-c(2,2)]
+```
+
+## Balance dataset using SMOTE
+SMOTE applied repeatedly until it balance class weight. 
+```{r }
+newData <- SMOTE(MCI ~ ., clean_data, perc.over = 500,perc.under=200, k= 5, learner=NULL)
+newdata1<- SMOTE(MCI ~ ., newData, perc.over = 500,perc.under=200, k= 5, learner=NULL)
+newdata2<- SMOTE(MCI ~ ., newdata1, perc.over = 500,perc.under=200, k= 5, learner=NULL)
+final_data<- SMOTE(MCI ~ ., newdata2, perc.over = 600,perc.under=300, k= 5, learner=NULL)
+prop.table(table(final_data$MCI)) ##it's not equally distributed because target variable has 5 categories
+```
+
+we randomly split balance dataset into 80-20% .
+## split balance dataset into training set and test set
+```{r }
+set.seed(123)
+train_index <- sample(1:nrow(final_data), 0.8 * nrow(final_data))
+train.set <- final_data[train_index,]
+test.set <- final_data[-train_index,]
+```
+
+##classification
+
+#KNN
+```{r }
+library("class")
+library("gmodels")
+
+knn_classifier = knn(train = train.set[, -1],
+             test = test.set[, -1],
+             cl = train.set[, 1],
+             k = 3,
+             prob = T) 
+CrossTable(x=test.set[,1], y=knn_classifier, prop.chisq=FALSE)
+
+cm = table(test.set[, 1], knn_classifier)
+
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class 
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted classes
+
+
+knn_accuracy = sum(diag) / n 
+knn_accuracy
+
+precision = diag / colsums 
+recall = diag / rowsums 
+f1 = 2 * precision * recall / (precision + recall) 
+knn_table <- data.frame(precision, recall, f1) 
+
+```
+
+##Multinomial Logistic Regression   
+```{r }
+library(caret)
+library(nnet)
+
+LR_model <- nnet::multinom(MCI ~., data = train.set)
+
+y_pred = predict(LR_model, test.set[-1])
+
+cm = table(test.set[, 1], y_pred)
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class 
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted classes
+
+
+LR_accuracy = sum(diag) / n 
+
+precision = diag / colsums 
+recall = diag / rowsums 
+f1 = 2 * precision * recall / (precision + recall) 
+LR_table <- data.frame(precision, recall, f1) 
+LR_table
+LR_accuracy
+```
+
+### Random Forest
+```{r }
+library(randomForest)
+set.seed(123)
+rf_classifier = randomForest(x = train.set[-1],
+                          y = train.set$MCI,
+                          ntree = 100)
+
+# Predicting the Test set results
+y_pred = predict(rf_classifier, test.set[-1])
+#y_p = as.numeric(levels(y_pred))[as.integer(y_pred)]
+
+# Making the Confusion Matrix
+cm = table(test.set[, 1], y_pred)
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class 
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted classes
+
+
+RF_accuracy = sum(diag) / n 
+RF_accuracy
+
+precision = diag / colsums 
+recall = diag / rowsums 
+f1 = 2 * precision * recall / (precision + recall) 
+RF_table <- data.frame(precision, recall, f1) 
+RF_table
+```
+The dataset includes every major crime committed from 2014-2019 year in the city of Toronto, with detailed information about the location and time of offence occurrence.Our aim is to predict crime type based on given information of time and location.The challenge is that this is highly imbalanced multi-class problem. Firstly SMOTE Sampling has been applied to dataset to balance class weight.After that,  multi-class classification models such as K-Nearest Neighbors, Multinomial Logistic Regression and Random Forest classifiers are built to predict the type of major crime committed based on time of day, HoodId,day of week ,day, month, premisetype etc. The Random Forest model performs reasonably well on F1-score (precision and recall) for a five-class classification problem. KNN Model also performs good compare to multi-class classification model. For better evaluation ROC curve will be defined later on.
