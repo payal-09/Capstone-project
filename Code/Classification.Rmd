@@ -65,6 +65,7 @@ clean_data <- crime_data[,-c(2,2)]
 ## Balance dataset using SMOTE
 SMOTE applied repeatedly until it balance class weight. 
 ```{r }
+set.seed(123)
 newData <- SMOTE(MCI ~ ., clean_data, perc.over = 500,perc.under=200, k= 5, learner=NULL)
 newdata1<- SMOTE(MCI ~ ., newData, perc.over = 500,perc.under=200, k= 5, learner=NULL)
 newdata2<- SMOTE(MCI ~ ., newdata1, perc.over = 500,perc.under=200, k= 5, learner=NULL)
@@ -87,11 +88,12 @@ test.set <- final_data[-train_index,]
 ```{r }
 library("class")
 library("gmodels")
+set.seed(123)
 
 knn_classifier = knn(train = train.set[, -1],
              test = test.set[, -1],
              cl = train.set[, 1],
-             k = 3,
+             k = 2,
              prob = T) 
 CrossTable(x=test.set[,1], y=knn_classifier, prop.chisq=FALSE)
 
@@ -120,6 +122,7 @@ knn_table <- data.frame(precision, recall, f1)
 ```{r }
 library(caret)
 library(nnet)
+set.seed(123)
 
 LR_model <- nnet::multinom(MCI ~., data = train.set)
 
