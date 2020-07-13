@@ -99,23 +99,15 @@ CrossTable(x=test.set[,1], y=knn_classifier, prop.chisq=FALSE)
 
 cm = table(test.set[, 1], knn_classifier)
 
-n = sum(cm) # number of instances
-nc = nrow(cm) # number of classes
-diag = diag(cm) # number of correctly classified instances per class 
-rowsums = apply(cm, 1, sum) # number of instances per class
-colsums = apply(cm, 2, sum) # number of predictions per class
-p = rowsums / n # distribution of instances over the actual classes
-q = colsums / n # distribution of instances over the predicted classes
-
-
-knn_accuracy = sum(diag) / n 
+knn_accuracy = sum(diag(cm)) / sum(cm) 
 knn_accuracy
 
-precision = diag / colsums 
-recall = diag / rowsums 
+precision = diag(cm) / apply(cm, 2, sum) 
+recall = diag(cm) / apply(cm, 1, sum) 
 f1 = 2 * precision * recall / (precision + recall) 
-knn_table <- data.frame(precision, recall, f1) 
 
+knn_table <- data.frame(precision, recall, f1) 
+knn_table
 ```
 
 ### Random Forest
@@ -132,21 +124,13 @@ y_pred = predict(rf_classifier, test.set[-1])
 
 # Making the Confusion Matrix
 cm = table(test.set[, 1], y_pred)
-n = sum(cm)
-nc = nrow(cm) 
-diag = diag(cm) 
-rowsums = apply(cm, 1, sum) 
-colsums = apply(cm, 2, sum) 
-p = rowsums / n 
-q = colsums / n
 
-
-RF_accuracy = sum(diag) / n 
+RF_accuracy = sum(diag(cm)) / sum(cm)
 RF_accuracy
-
-precision = diag / colsums 
-recall = diag / rowsums 
+precision = diag(cm) / apply(cm, 2, sum) 
+recall = diag(cm) / apply(cm, 1, sum) 
 f1 = 2 * precision * recall / (precision + recall) 
+
 RF_table <- data.frame(precision, recall, f1) 
 RF_table
 ```
