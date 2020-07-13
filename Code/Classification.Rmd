@@ -118,36 +118,6 @@ knn_table <- data.frame(precision, recall, f1)
 
 ```
 
-##Multinomial Logistic Regression   
-```{r }
-library(caret)
-library(nnet)
-set.seed(123)
-
-LR_model <- nnet::multinom(MCI ~., data = train.set)
-
-y_pred = predict(LR_model, test.set[-1])
-
-cm = table(test.set[, 1], y_pred)
-n = sum(cm) 
-nc = nrow(cm) 
-diag = diag(cm) 
-rowsums = apply(cm, 1, sum) 
-colsums = apply(cm, 2, sum) 
-p = rowsums / n 
-q = colsums / n
-
-
-LR_accuracy = sum(diag) / n 
-
-precision = diag / colsums 
-recall = diag / rowsums 
-f1 = 2 * precision * recall / (precision + recall) 
-LR_table <- data.frame(precision, recall, f1) 
-LR_table
-LR_accuracy
-```
-
 ### Random Forest
 ```{r }
 library(randomForest)
@@ -180,4 +150,4 @@ f1 = 2 * precision * recall / (precision + recall)
 RF_table <- data.frame(precision, recall, f1) 
 RF_table
 ```
-The dataset includes every major crime committed from 2014-2019 year in the city of Toronto, with detailed information about the location and time of offence occurrence.Our aim is to predict crime type based on given information of time and location.The challenge is that this is highly imbalanced multi-class problem. Firstly SMOTE Sampling has been applied to dataset to balance class weight.After that,  multi-class classification models such as K-Nearest Neighbors, Multinomial Logistic Regression and Random Forest classifiers are built to predict the type of major crime committed based on time of day, HoodId,day of week ,day, month, premisetype etc. The Random Forest model performs reasonably well on F1-score (precision and recall) for a five-class classification problem. KNN Model also performs good compare to multi-class classification model. For better evaluation ROC curve will be defined later on.
+The dataset includes every major crime committed from 2014-2019 year in the city of Toronto, with detailed information about the location and time of offence occurrence.Our aim is to predict crime type based on given information of time and location.The challenge is that this is highly imbalanced multi-class problem. Firstly SMOTE Sampling has been applied to dataset to balance class weight.After that,  multi-class classification models such as K-Nearest Neighbors and Random Forest classifiers are built to predict the type of major crime committed based on time of day, HoodId,day of week ,day, month, premisetype etc. The Random Forest model performs reasonably well on F1-score (precision and recall) for a five-class classification problem. For better evaluation ROC curve will be defined later on.
