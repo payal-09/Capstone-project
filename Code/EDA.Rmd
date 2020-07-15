@@ -85,7 +85,7 @@ ggplot(df, aes(x = reorder(occurrenceyear,counts), y = counts , fill = MCI )) +
 
 ##Crime type distribution in city by every month
 
-Assault has higer chance to occur in summer time whereas Break and Enter , Auto theft have higer chance to happen in between september and november month.However occurrences of Theft over reamin same throughout the year.
+Assault has higher chance to occur in summer time whereas Break and Enter , Auto theft have higher chance to happen in between september and november month. However, occurrences of Theft over remain same throughout the year.
 ```{r }
 df <- crime_data %>%
   group_by(occurrencemonth,MCI) %>%
@@ -105,7 +105,7 @@ ggplot(df, aes(x = occurrencemonth, y = counts, color = MCI, group = MCI  )) +
 ```
 ##Crime type distribution in city for day of week
 
-Assualt has higher chance to happen in weekends. Break and Enter has higher chance to happen on friday. 
+Assault has higher chance to happen in weekends. Break and Enter has higher chance to happen on friday. 
 ```{r }
 df <- crime_data %>%
   group_by(occurrencedayofweek,MCI) %>%
@@ -134,7 +134,7 @@ ggplot(df, aes(x=occurrencehour, y=counts, color=MCI, group=MCI)) +
 
 ```
 ##Observations
-While "Assaults"" are the most common crimes throughout the day.It is more likely to happen from the afternoon till nights and in the early mornings."Break and Enter" most likely to occur during early morning time and afternoon time. Whereas "Robbery" and "Auto Theft" happened more offen from the late eveing till the nights.
+While "Assaults"" are the most common crimes throughout the day.It is more likely to happen from the afternoon till nights and in the early mornings. "Break and Enter" most likely to occur during early morning time and afternoon time. Whereas "Robbery" and "Auto Theft" happened more often from the late evening till the nights.
 
 
 ##Toronto's neighbourhoods with most crime - Top 10
