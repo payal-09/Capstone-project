@@ -17,7 +17,7 @@ Crime pattern analysis
 
 ## Crime hotspot (high density area) analysis.
 
-K- Means algorithm has been used for spatial analysis. K-Means clustering applied on "MCI" and "Neighbourhood" variables, goal of this analysis is to assign a cluster to each neighbourhood. It partition neighbourhood belongs to the cluster with nearest mean. In addition, Elbow method analysis applied to decide the optimal value of k that is the number of cluster.
+K-means algorithm has been used for spatial analysis. K-Means clustering applied on "MCI" and "Neighbourhood" variables, goal of this analysis is to assign a cluster to each neighbourhood. It partition neighbourhood belongs to the cluster with nearest mean. In addition, Elbow method analysis applied to decide the optimal value of k that is the number of cluster.
 
 ## Important labraries
 ```{r}
@@ -69,7 +69,7 @@ clusters <- kmeans(df2,2)
 clusters
 
 ```
-Results of this analysis indicates that the first cluster has 129 neighbourhoods with low mean for each MCI category. Whereas the second cluster has 10 neighbourhoods with high mean for each MCI category. Second cluster is the crime hotspot.
+Results of this analysis indicates that the first cluster has 129 neighbourhoods with low mean for each MCI category. Whereas the second cluster has 11 neighbourhoods with high mean for each MCI category. Second cluster is the crime hotspot.
 
 ## plotting clusters:
 
