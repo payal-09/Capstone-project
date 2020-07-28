@@ -68,6 +68,10 @@ This Plot shows a very strong elbow ar k = 2. It's clear that for our analysis o
 clusters <- kmeans(df2,2)
 clusters
 
+cl <- cbind(groups[,1], clusterNum = clusters$cluster) 
+hotspot <- cl[(cl$clusterNum == 2),] ## List of neighbourhoods belong  to cluster 2
+hotspot
+
 ```
 Results of this analysis indicates that the first cluster has 129 neighbourhoods with low mean for each MCI category. Whereas the second cluster has 11 neighbourhoods with high mean for each MCI category. Second cluster is the crime hotspot.
 
@@ -76,9 +80,7 @@ Results of this analysis indicates that the first cluster has 129 neighbourhoods
 ```{r}
 cluster_plot <- data.frame(df2, clusters$cluster)
 clusplot(cluster_plot, clusters$cluster, color=TRUE, shade=F, main='k-Means Cluster Analysis')
-cl <- cbind(groups[,1], clusterNum = clusters$cluster) 
-hotspot <- cl[(cl$clusterNum == 2),] ## List of neighbourhoods belongs to cluster 2
-hotspot
+
 ```
 Result of K-Means clustering is pretty good, this describe 87% of point variability.
 
